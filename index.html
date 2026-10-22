@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Invoice Analisis Tanah</title>
+<style>
+/* Layout: two panes — input form (left) feeding live invoice + receipt sheets (right); stacks on phone */
+:root{
+  --bg:#eef1ec; --paper:#ffffff; --ink:#1d2620; --muted:#5f6b62; --line:#d5dbd3;
+  --accent:#2f5d46; --accent-soft:#e1ebe4; --warn:#a45c12; --warn-soft:#f8ecdd;
+  --bad:#a3322b; --bad-soft:#f6e1df; --good:#2c6b3f; --good-soft:#dfeee2;
+  --f-display:"Segoe UI Semibold","Segoe UI",Tahoma,Arial,sans-serif; --f-body:"Segoe UI",Tahoma,Arial,sans-serif; --f-mono:Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#141a16; --paper:#1c241f; --ink:#e4ebe5; --muted:#9aa89e; --line:#2f3a33;
+  --accent:#7fbf9c; --accent-soft:#24362c; --warn:#e3a35c; --warn-soft:#3a2c1b;
+  --bad:#ec8a82; --bad-soft:#3d2321; --good:#86cf9b; --good-soft:#1f3527; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141a16; --paper:#1c241f; --ink:#e4ebe5; --muted:#9aa89e; --line:#2f3a33;
+  --accent:#7fbf9c; --accent-soft:#24362c; --warn:#e3a35c; --warn-soft:#3a2c1b;
+  --bad:#ec8a82; --bad-soft:#3d2321; --good:#86cf9b; --good-soft:#1f3527; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-left:16px;padding-right:16px;padding-block:20px 40px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0}
+.wrap{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:24px;align-items:start}
+@media (max-width:880px){.wrap{grid-template-columns:minmax(0,1fr)}}
+header.top{max-width:1180px;margin:0 auto 18px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;justify-content:space-between}
+header.top h1{font-size:1.45rem;font-weight:800;letter-spacing:-.01em}
+header.top p{margin:0;color:var(--muted)}
+.panel{display:flex;flex-direction:column;gap:18px;min-width:0}
+.docs{display:flex;flex-direction:column;gap:20px;min-width:0}
+fieldset{border:1px solid var(--line);border-radius:10px;background:var(--paper);margin:0;padding:14px 16px 16px;min-width:0}
+legend{font-family:var(--f-display);font-weight:700;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);padding:0 6px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:480px){.grid2{grid-template-columns:1fr}}
+.full{grid-column:1/-1}
+label{display:flex;flex-direction:column;gap:4px;font-size:.85rem;color:var(--muted);font-weight:600;min-width:0}
+label.check{flex-direction:row;align-items:center;gap:8px;color:var(--ink);font-size:.92rem}
+label.check input{width:18px;height:18px;accent-color:var(--accent)}
+input[type=text],input[type=number],input[type=date],select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:8px 10px;width:100%;min-width:0}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{flex:1;font:inherit;font-weight:700;padding:8px 4px;border:0;background:var(--bg);color:var(--muted);cursor:pointer;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--paper)}
+.hint{font-size:.8rem;color:var(--muted);margin:6px 0 0}
+.tools{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.btn{font:inherit;font-weight:600;font-size:.85rem;padding:7px 12px;border-radius:7px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.btn.primary{background:var(--accent);color:var(--paper);border-color:var(--accent)}
+.btn.small{padding:4px 8px;font-size:.78rem}
+.btn:hover{border-color:var(--accent)}
+.group-h{font-family:var(--f-display);font-size:.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:12px 0 4px}
+.list{display:flex;flex-direction:column}
+.row{display:grid;grid-template-columns:22px minmax(0,1fr) auto 64px;gap:8px;align-items:center;padding:6px 0;border-bottom:1px dashed var(--line)}
+.row:last-child{border-bottom:0}
+.row .nm{min-width:0}
+.row .nm small{color:var(--muted);font-family:var(--f-mono);font-size:.72rem;margin-right:4px}
+.row .pr{font-family:var(--f-mono);font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.row input[type=number]{padding:5px 6px;text-align:right;font-family:var(--f-mono);font-size:.85rem}
+.row input[type=number]:disabled{opacity:.35}
+.row input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}
+.crow{display:grid;grid-template-columns:minmax(0,1fr) 110px 64px auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px dashed var(--line)}
+.crow input{padding:6px 8px;font-size:.85rem}
+.crow input[type=number]{text-align:right;font-family:var(--f-mono)}
+@media (max-width:480px){.crow{grid-template-columns:minmax(0,1fr) 92px 56px auto}}
+
+/* sheets */
+.sheet{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:28px 26px;min-width:0;box-shadow:0 1px 0 var(--line),0 10px 30px -18px rgba(0,0,0,.25)}
+@media (max-width:880px){.sheet{padding:20px 16px}}
+.doc-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--muted);margin:0 0 -12px 2px}
+.sh-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:14px;border-bottom:2px solid var(--ink);padding-bottom:14px}
+.sh-head .org{font-size:.82rem;color:var(--muted);line-height:1.35}
+.sh-head .org b{display:block;color:var(--ink);font-family:var(--f-display);font-size:1rem}
+.sh-head .ttl{text-align:right}
+.sh-head .ttl h2{font-size:1.6rem;font-weight:800;letter-spacing:.06em}
+.sh-head .ttl div{font-family:var(--f-mono);font-size:.8rem;color:var(--muted)}
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:6px 20px;padding:14px 0;border-bottom:1px solid var(--line);font-size:.9rem;margin:0}
+@media (max-width:480px){.meta{grid-template-columns:1fr}}
+.meta dt{font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700}
+.meta dd{margin:0 0 6px;font-weight:600;overflow-wrap:anywhere}
+.pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:.78rem;font-weight:700;letter-spacing:.03em}
+.pill.lunas{background:var(--good-soft);color:var(--good)}
+.pill.dp{background:var(--warn-soft);color:var(--warn)}
+.pill.belum{background:var(--bad-soft);color:var(--bad)}
+.tbl-wrap{overflow-x:auto;margin-top:12px}
+table{width:100%;border-collapse:collapse;font-size:.86rem;min-width:440px}
+th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:left;border-bottom:1px solid var(--ink);padding:6px 6px}
+td{padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+td.n,th.n{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+td.no{color:var(--muted);font-family:var(--f-mono);font-size:.78rem}
+tr.empty td{text-align:center;color:var(--muted);padding:22px 6px;font-style:italic}
+.totals{display:flex;flex-direction:column;gap:4px;margin-left:auto;max-width:320px;padding-top:12px}
+.totals div{display:flex;justify-content:space-between;gap:12px;font-size:.9rem}
+.totals span:last-child{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.totals .grand{border-top:2px solid var(--ink);padding-top:8px;margin-top:4px;font-weight:700;font-size:1.05rem}
+.terbilang{margin-top:12px;padding:10px 12px;background:var(--accent-soft);border-radius:6px;font-size:.85rem}
+.terbilang b{font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;display:block;color:var(--accent)}
+.va{margin-top:12px;border:1px solid var(--line);border-radius:6px;padding:10px 12px;font-size:.88rem;display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 14px}
+.va h3{grid-column:1/-1;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--accent);margin-bottom:4px}
+.va span:nth-child(even){color:var(--muted)}
+.va .num{font-family:var(--f-mono);font-weight:600;letter-spacing:.04em;overflow-wrap:anywhere}
+.foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;margin-top:22px;font-size:.8rem;color:var(--muted)}
+.sign{text-align:center;min-width:200px;margin-left:auto}
+.sign .sp{height:56px}
+.sign b{color:var(--ink);display:block}
+/* kwitansi */
+.kw-body{display:flex;flex-direction:column;gap:0;padding-top:8px}
+.kw-line{display:grid;grid-template-columns:150px minmax(0,1fr);gap:12px;padding:10px 0;border-bottom:1px dotted var(--muted);font-size:.95rem}
+.kw-line span:first-child{color:var(--muted);font-size:.85rem}
+.kw-line span:last-child{font-weight:600;overflow-wrap:anywhere}
+.kw-line.words span:last-child{font-style:italic;background:var(--accent-soft);padding:4px 8px;border-radius:4px}
+@media (max-width:480px){.kw-line{grid-template-columns:1fr;gap:2px}}
+.kw-foot{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px;margin-top:20px}
+.kw-amount{font-family:var(--f-mono);font-size:1.3rem;font-weight:600;border:2px solid var(--ink);padding:8px 14px;font-variant-numeric:tabular-nums}
+.kw-stamp{display:inline-block;border:2px solid var(--good);color:var(--good);font-family:var(--f-display);font-weight:800;letter-spacing:.2em;padding:4px 12px;transform:rotate(-6deg);margin-top:8px}
+.kw-off{border:1px dashed var(--line);border-radius:8px;padding:16px;color:var(--muted);font-size:.88rem;text-align:center}
+.copybar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#toast{font-size:.82rem;color:var(--good)}
+textarea#copyfallback{width:100%;height:120px;font-family:var(--f-mono);font-size:.75rem;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:6px}
+@media (prefers-reduced-motion:no-preference){.row,.btn,.seg button{transition:background .15s,border-color .15s}}
+
+@media print{
+  body[data-print=inv] #kwSheet{display:none!important}
+  body[data-print=kw] #invSheet{display:none!important}
+  @page{size:A4;margin:14mm}
+  :root{--bg:#fff;--paper:#fff;--ink:#000;--muted:#444;--line:#bbb;--accent-soft:#eee;color-scheme:light}
+  body{padding:0;background:#fff}
+  header.top,.panel,.copybar,.doc-label,#kwOff,#copyfallback,.no-print{display:none!important}
+  .wrap{display:block;max-width:none}
+  .sheet{box-shadow:none;border:0;padding:0;page-break-after:always}
+  .sheet:last-of-type{page-break-after:auto}
+  table{min-width:0}
+}
+</style>
+</head>
+<body>
+<script>
+/* Browser lama (Internet Explorer) tidak bisa menjalankan halaman ini */
+if(!(window.CSS&&CSS.supports&&CSS.supports("--a","0"))){document.write('<p style="padding:14px;margin:0;background:#fde2e0;color:#8a1c14;font-family:Tahoma,Arial">Browser ini terlalu lama. Buka file index.html dengan Google Chrome (versi 109) atau Mozilla Firefox ESR (versi 115) di Windows 7.</p>');}
+</script>
+<noscript><p>Aktifkan JavaScript di browser.</p></noscript>
+
+
+<header class="top">
+  <h1>Invoice Analisis Tanah</h1>
+  <p>Tarif Lab Tanah FP Unud 2022 · versi offline · data tersimpan di komputer ini</p>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <fieldset>
+      <legend>Data Pengirim</legend>
+      <div class="grid2">
+        <label>Nama pengirim<input type="text" id="nama" placeholder="Nama lengkap"></label>
+        <label>Instansi pengirim<input type="text" id="instansi" placeholder="Instansi / prodi"></label>
+        <label>Jenis sampel
+          <select id="jenis">
+            <option value="tanah">Tanah</option>
+            <option value="pupuk">Pupuk</option>
+            <option value="poc">POC (pupuk organik cair)</option>
+            <option value="air">Air</option>
+            <option value="tanaman">Tanaman (jaringan)</option>
+          </select>
+        </label>
+        <label>Kode sampel (opsional)<input type="text" id="kode" placeholder="mis. T-01 s/d T-05"></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Pembayaran</legend>
+      <div class="grid2">
+        <label>Status pembayaran
+          <select id="status">
+            <option value="belum">Belum dibayar</option>
+            <option value="dp">Uang muka (DP)</option>
+            <option value="lunas">Lunas</option>
+          </select>
+        </label>
+        <label id="dpWrap" hidden>Jumlah dibayar (Rp)<input type="number" id="dp" min="0" step="500" value="0"></label>
+        <label class="check full"><input type="checkbox" id="vaOn"> Pembayaran via virtual account</label>
+        <label class="vaF" hidden>Bank<input type="text" id="vaBank" placeholder="mis. BNI"></label>
+        <label class="vaF" hidden>Nomor virtual account<input type="text" id="vaNo" inputmode="numeric" placeholder="mis. 8xxxxxxxxxxx"></label>
+        <label class="vaF full" hidden>Atas nama<input type="text" id="vaNama" placeholder="mis. Universitas Udayana"></label>
+      </div>
+      <p class="hint">Jika tidak via virtual account, info rekening tidak ditampilkan di invoice maupun kwitansi.</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Tarif &amp; Jumlah Sampel</legend>
+      <label style="margin-bottom:10px">Kategori tarif</label>
+      <div class="seg" role="group" aria-label="Kategori tarif" id="tarif">
+        <button type="button" data-k="A" aria-pressed="false" id="tA">A</button>
+        <button type="button" data-k="B" aria-pressed="false" id="tB">B</button>
+        <button type="button" data-k="C" aria-pressed="true" id="tC">C</button>
+      </div>
+      <p class="hint" id="tarifInfo"></p>
+      <div class="grid2" style="margin-top:12px">
+        <label>Jumlah sampel<input type="number" id="jml" min="1" value="5"></label>
+        <label>Tanggal<input type="date" id="tgl"></label>
+        <label class="full">No. invoice<input type="text" id="noinv"></label>
+      </div>
+      <p class="hint">Jumlah sampel otomatis mengisi tiap analisis. Ubah angka di baris jika satu analisis berbeda jumlahnya.</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Jenis Analisis</legend>
+      <div class="tools">
+        <button type="button" class="btn primary" id="paket">Pilih paket dasar tanah (No. 1–9)</button>
+        <button type="button" class="btn" id="clear">Kosongkan pilihan</button>
+      </div>
+      <p class="hint" id="jenisNote" hidden></p>
+      <div id="lists"></div>
+      <div class="group-h">Analisis lain (harga manual)</div>
+      <div id="custom"></div>
+      <button type="button" class="btn small" id="addC" style="margin-top:8px">+ Tambah analisis</button>
+    </fieldset>
+  </div>
+
+  <div class="docs">
+    <p class="doc-label">Draft cetak · Invoice</p>
+    <article class="sheet" id="invSheet" aria-label="Pratinjau invoice">
+      <div class="sh-head">
+        <div class="org"><b>Laboratorium Tanah</b>Konsentrasi Tanah &amp; Lingkungan<br>Fakultas Pertanian, Universitas Udayana<br>Denpasar, Bali</div>
+        <div class="ttl"><h2>INVOICE</h2><div id="vNo"></div><div id="vTgl"></div></div>
+      </div>
+      <dl class="meta">
+        <div><dt>Nama pengirim</dt><dd id="vNama">–</dd></div>
+        <div><dt>Instansi</dt><dd id="vInst">–</dd></div>
+        <div><dt>Jenis sampel</dt><dd id="vJenis">–</dd></div>
+        <div><dt>Status pembayaran</dt><dd><span class="pill" id="vStatus"></span></dd></div>
+        <div><dt>Kategori tarif</dt><dd id="vTarif"></dd></div>
+        <div><dt>Jumlah / kode sampel</dt><dd id="vJml"></dd></div>
+      </dl>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>No</th><th>Analisis</th><th class="n">Harga/sampel</th><th class="n">Sampel</th><th class="n">Subtotal</th></tr></thead>
+          <tbody id="vRows"></tbody>
+        </table>
+      </div>
+      <div class="totals">
+        <div><span>Total biaya</span><span id="vTotal"></span></div>
+        <div id="vDpRow" hidden><span>Sudah dibayar</span><span id="vDp"></span></div>
+        <div class="grand"><span id="vGrandLbl">Total tagihan</span><span id="vGrand"></span></div>
+      </div>
+      <div class="terbilang"><b>Terbilang</b><span id="vTerbilang"></span></div>
+      <div class="va" id="vVa" hidden>
+        <h3>Pembayaran melalui virtual account</h3>
+        <span>Bank</span><span id="vVaBank"></span>
+        <span>No. VA</span><span class="num" id="vVaNo"></span>
+        <span>Atas nama</span><span id="vVaNama"></span>
+      </div>
+      <div class="foot">
+        <div>Harga mengacu pada Rincian Biaya Analisis Tanah,<br>Denpasar 10 Juni 2022.</div>
+        <div class="sign">Denpasar, <span class="vTglTxt"></span><br>Ketua Konsentrasi Lab Tanah<div class="sp"></div><b>Ir. I Dewa Made Arthagama, M.P.</b>NIP. 196009151986011001</div>
+      </div>
+    </article>
+
+    <p class="doc-label">Draft cetak · Kwitansi</p>
+    <div class="kw-off" id="kwOff">Kwitansi muncul otomatis setelah status pembayaran diubah menjadi <b>Lunas</b>.</div>
+    <article class="sheet" id="kwSheet" aria-label="Pratinjau kwitansi" hidden>
+      <div class="sh-head">
+        <div class="org"><b>Laboratorium Tanah</b>Konsentrasi Tanah &amp; Lingkungan<br>Fakultas Pertanian, Universitas Udayana</div>
+        <div class="ttl"><h2>KWITANSI</h2><div id="kNo"></div></div>
+      </div>
+      <div class="kw-body">
+        <div class="kw-line"><span>Telah terima dari</span><span id="kDari"></span></div>
+        <div class="kw-line words"><span>Uang sejumlah</span><span id="kWords"></span></div>
+        <div class="kw-line"><span>Untuk pembayaran</span><span id="kUntuk"></span></div>
+        <div class="kw-line" id="kVaLine" hidden><span>Dibayar melalui</span><span id="kVa"></span></div>
+        <div class="kw-line"><span>Ref. invoice</span><span id="kRef"></span></div>
+      </div>
+      <div class="kw-foot">
+        <div><div class="kw-amount" id="kAmt"></div><span class="kw-stamp">LUNAS</span></div>
+        <div class="sign">Denpasar, <span class="vTglTxt"></span><br>Yang menerima,<div class="sp"></div><b>Ir. I Dewa Made Arthagama, M.P.</b>Ketua Konsentrasi Lab Tanah</div>
+      </div>
+    </article>
+
+    <div class="copybar">
+      <button type="button" class="btn primary" id="printInv">Cetak invoice</button>
+      <button type="button" class="btn primary" id="printKw" hidden>Cetak kwitansi</button>
+      <button type="button" class="btn" id="copy">Salin rincian invoice (teks)</button>
+      <button type="button" class="btn" id="reset">Invoice baru</button>
+      <span id="toast" aria-live="polite"></span>
+    </div>
+    <textarea id="copyfallback" hidden readonly aria-label="Rincian invoice"></textarea>
+  </div>
+</div>
+
+<script>
+const TARIF_INFO={A:"A · Mhs. & Dosen S1, S2, S3 Konsentrasi Tanah FP Unud",B:"B · Mhs. & Dosen S1, S2, S3 di luar Konsentrasi Tanah & Lingkungan",C:"C · Umum"};
+const JENIS={tanah:"Tanah",pupuk:"Pupuk",poc:"POC (pupuk organik cair)",air:"Air",tanaman:"Tanaman (jaringan)"};
+// which price-list groups are shown per sample type
+const GROUPS={tanah:["tanah"],tanaman:["jaringan"],pupuk:["jaringan","tanah"],poc:["jaringan","tanah"],air:["tanah"]};
+const ITEMS=[
+ ["tanah","1","Persiapan",10000,12500,20000,1],
+ ["tanah","2","N-Total (Kjeldahl)",30000,35000,40000,1],
+ ["tanah","3","Fosfat (Bray-1)",30000,35000,40000,1],
+ ["tanah","4","Kalium (Bray-1)",50000,60000,60000,1],
+ ["tanah","5","C-Organik (Walkley & Black)",30000,35000,40000,1],
+ ["tanah","6","Kadar garam (Salinitas)",12500,15000,20000,1],
+ ["tanah","7","pH (H₂O)",12500,15000,20000,1],
+ ["tanah","8","Kadar air (kap. lapang)",10000,12500,20000,1],
+ ["tanah","9","Tekstur 3 fraksi",30000,35000,40000,1],
+ ["tanah","10","P (HCl)",30000,35000,40000],
+ ["tanah","11","K (HCl)",50000,60000,60000],
+ ["tanah","12","Fosfat (Olsen)",30000,35000,40000],
+ ["tanah","13","Kalium (Olsen)",50000,60000,60000],
+ ["tanah","14","Tekstur 3 fraksi + pasir sangat halus",35000,40000,50000],
+ ["tanah","15","KTK (Amonium Asetat)",30000,40000,60000],
+ ["tanah","16","KB",20000,25000,30000],
+ ["tanah","17","K dapat ditukar",50000,55000,60000],
+ ["tanah","18","Na dapat ditukar",50000,55000,60000],
+ ["tanah","19","Ca dapat ditukar",50000,55000,60000],
+ ["tanah","20","Mg dapat ditukar",50000,55000,60000],
+ ["tanah","21","pH (KCl)",12500,15000,30000],
+ ["tanah","22","pH (NaF)",20000,25000,30000],
+ ["tanah","23","Berat volume",12500,15000,17500],
+ ["tanah","24","Permeabilitas",12500,15000,17500],
+ ["tanah","25","Al dapat ditukar",17500,20000,30000],
+ ["tanah","26","P retensi",30000,35000,40000],
+ ["tanah","27","Al, Fe, Si (Oksalat)",50000,55000,60000],
+ ["tanah","28","Angka Atterberg",20000,25000,30000],
+ ["tanah","29","Berat jenis partikel",20000,25000,30000],
+ ["tanah","30","Respirasi",15000,20000,25000],
+ ["tanah","31","Total bakteri dan jamur",50000,60000,70000],
+ ["jaringan","J1","Persiapan (blender) & destruksi",15000,15000,20000],
+ ["jaringan","J2","Nitrogen",30000,35000,40000],
+ ["jaringan","J3","Fosfat",30000,35000,40000],
+ ["jaringan","J4","Kalium",50000,55000,60000],
+].map(r=>({g:r[0],no:r[1],nama:r[2],h:{A:r[3],B:r[4],C:r[5]},paket:!!r[6]}));
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const rp=n=>"Rp "+Math.round(n).toLocaleString("id-ID");
+const pad=n=>String(n).padStart(2,"0");
+const today=()=>{const d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())};
+const fmtTgl=s=>{if(!s)return"–";const [y,m,d]=s.split("-");const bl=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];return +d+" "+bl[+m-1]+" "+y};
+const defNo=()=>{const d=new Date();return "LT/"+d.getFullYear()+"/"+pad(d.getMonth()+1)+"/"+pad(d.getDate())+pad(d.getHours())+pad(d.getMinutes())};
+
+function terbilang(n){
+  n=Math.floor(n);const s=["","satu","dua","tiga","empat","lima","enam","tujuh","delapan","sembilan","sepuluh","sebelas"];
+  const f=x=>x<12?s[x]:x<20?f(x-10)+" belas":x<100?f(Math.floor(x/10))+" puluh "+f(x%10):x<200?"seratus "+f(x-100):x<1000?f(Math.floor(x/100))+" ratus "+f(x%100):x<2000?"seribu "+f(x-1000):x<1e6?f(Math.floor(x/1000))+" ribu "+f(x%1000):x<1e9?f(Math.floor(x/1e6))+" juta "+f(x%1e6):f(Math.floor(x/1e9))+" miliar "+f(x%1e9);
+  if(n===0)return"nol rupiah";const t=f(n).replace(/\s+/g," ").trim();return t.charAt(0).toUpperCase()+t.slice(1)+" rupiah";
+}
+
+let S;
+function fresh(){return{nama:"",instansi:"",jenis:"tanah",status:"belum",dp:0,kode:"",tarif:"C",jml:5,tgl:today(),noinv:defNo(),sel:{},custom:[],vaOn:false,vaBank:"",vaNo:"",vaNama:""}}
+function example(){const s=fresh();s.nama="Contoh: Ni Made Ayu Lestari";s.instansi="Contoh: Prodi Agroekoteknologi FP Unud";s.tarif="B";ITEMS.forEach(i=>{if(i.paket)s.sel[i.no]={q:5,own:false}});return s}
+try{const raw=localStorage.getItem("invTanahDraft");S=raw?Object.assign(fresh(),JSON.parse(raw)):example()}catch(e){S=example()}
+if(!JENIS[S.jenis])S.jenis=S.jenis==="jaringan"?"tanaman":"tanah";
+const save=()=>{try{localStorage.setItem("invTanahDraft",JSON.stringify(S))}catch(e){}};
+const visible=()=>GROUPS[S.jenis];
+
+function buildLists(){
+  const wrap=$("lists");wrap.innerHTML="";
+  const groups={tanah:"Daftar tarif analisis tanah",jaringan:"Daftar tarif analisis jaringan"};
+  $("paket").hidden=!visible().includes("tanah");
+  const note={pupuk:"Untuk pupuk, pilih parameter yang sesuai dari daftar tarif, atau tambahkan analisis lain dengan harga manual.",poc:"Untuk POC, pilih parameter yang sesuai dari daftar tarif, atau tambahkan analisis lain dengan harga manual.",air:"Untuk air, pilih parameter yang sesuai (mis. pH, salinitas), atau tambahkan analisis lain dengan harga manual."}[S.jenis];
+  $("jenisNote").hidden=!note;$("jenisNote").textContent=note||"";
+  visible().forEach(g=>{
+    const h=document.createElement("div");h.className="group-h";h.textContent=groups[g];wrap.appendChild(h);
+    const list=document.createElement("div");list.className="list";
+    ITEMS.filter(i=>i.g===g).forEach(i=>{
+      const sel=S.sel[i.no];
+      const row=document.createElement("div");row.className="row";
+      row.innerHTML=`<input type="checkbox" id="c_${i.no}" ${sel?"checked":""} aria-label="Pilih ${esc(i.nama)}">
+        <label for="c_${i.no}" class="nm" style="color:var(--ink);font-weight:400;font-size:.9rem;display:block"><small>${i.no}</small>${esc(i.nama)}</label>
+        <span class="pr">${rp(i.h[S.tarif])}</span>
+        <input type="number" id="q_${i.no}" min="0" value="${sel?sel.q:S.jml}" ${sel?"":"disabled"} aria-label="Jumlah sampel ${esc(i.nama)}">`;
+      row.querySelector("input[type=checkbox]").addEventListener("change",e=>{
+        if(e.target.checked)S.sel[i.no]={q:S.jml,own:false};else delete S.sel[i.no];
+        const q=$("q_"+i.no);q.disabled=!e.target.checked;q.value=e.target.checked?S.sel[i.no].q:S.jml;render();
+      });
+      row.querySelector("input[type=number]").addEventListener("input",e=>{
+        if(!S.sel[i.no])return;S.sel[i.no].q=Math.max(0,parseInt(e.target.value)||0);S.sel[i.no].own=true;render();
+      });
+      list.appendChild(row);
+    });
+    wrap.appendChild(list);
+  });
+}
+
+function buildCustom(){
+  const w=$("custom");w.innerHTML="";
+  if(!S.custom.length){w.innerHTML='<p class="hint" style="margin:2px 0">Belum ada. Pakai ini untuk parameter yang tidak ada di daftar tarif.</p>';return}
+  S.custom.forEach((c,ix)=>{
+    const r=document.createElement("div");r.className="crow";
+    r.innerHTML=`<input type="text" id="cn_${c.id}" placeholder="Nama analisis" value="${esc(c.nama)}" aria-label="Nama analisis">
+      <input type="number" id="ch_${c.id}" min="0" step="500" placeholder="Harga" value="${c.harga||""}" aria-label="Harga per sampel">
+      <input type="number" id="cq_${c.id}" min="0" value="${c.q}" aria-label="Jumlah sampel">
+      <button type="button" class="btn small" aria-label="Hapus">Hapus</button>`;
+    const [n,h,q]=r.querySelectorAll("input");
+    n.addEventListener("input",e=>{c.nama=e.target.value;render()});
+    h.addEventListener("input",e=>{c.harga=Math.max(0,parseFloat(e.target.value)||0);render()});
+    q.addEventListener("input",e=>{c.q=Math.max(0,parseInt(e.target.value)||0);c.own=true;render()});
+    r.querySelector("button").addEventListener("click",()=>{S.custom.splice(ix,1);buildCustom();render()});
+    w.appendChild(r);
+  });
+}
+
+function lines(){
+  const L=ITEMS.filter(i=>S.sel[i.no]&&visible().includes(i.g)).map(i=>{const h=i.h[S.tarif],q=S.sel[i.no].q;return{no:i.no,nama:i.nama,harga:h,q,sub:h*q}});
+  S.custom.forEach((c,ix)=>{if(c.nama||c.harga)L.push({no:"L"+(ix+1),nama:c.nama||"(tanpa nama)",harga:c.harga||0,q:c.q,sub:(c.harga||0)*c.q})});
+  return L;
+}
+
+function render(){
+  $("tarifInfo").textContent=TARIF_INFO[S.tarif];
+  ["A","B","C"].forEach(k=>$("t"+k).setAttribute("aria-pressed",S.tarif===k));
+  $("dpWrap").hidden=S.status!=="dp";
+  document.querySelectorAll(".vaF").forEach(el=>el.hidden=!S.vaOn);
+  const L=lines();const total=L.reduce((a,b)=>a+b.sub,0);
+  const paid=S.status==="lunas"?total:S.status==="dp"?Math.min(S.dp||0,total):0;
+  const sisa=total-paid;
+  $("vNo").textContent=S.noinv||"–";$("vTgl").textContent=fmtTgl(S.tgl);
+  document.querySelectorAll(".vTglTxt").forEach(el=>el.textContent=fmtTgl(S.tgl));
+  $("vNama").textContent=S.nama||"–";$("vInst").textContent=S.instansi||"–";
+  $("vJenis").textContent=JENIS[S.jenis];
+  const st=$("vStatus");st.className="pill "+S.status;st.textContent={belum:"BELUM DIBAYAR",dp:"UANG MUKA (DP)",lunas:"LUNAS"}[S.status];
+  $("vTarif").textContent=TARIF_INFO[S.tarif];
+  $("vJml").textContent=S.jml+" sampel"+(S.kode?" · "+S.kode:"");
+  $("vRows").innerHTML=L.length?L.map(l=>`<tr><td class="no">${l.no}</td><td>${esc(l.nama)}</td><td class="n">${rp(l.harga)}</td><td class="n">${l.q}</td><td class="n">${rp(l.sub)}</td></tr>`).join(""):`<tr class="empty"><td colspan="5">Belum ada analisis dipilih</td></tr>`;
+  $("vTotal").textContent=rp(total);
+  $("vDpRow").hidden=S.status==="belum";$("vDp").textContent=rp(paid);
+  $("vGrandLbl").textContent=S.status==="belum"?"Total tagihan":"Sisa tagihan";
+  const due=S.status==="belum"?total:sisa;
+  $("vGrand").textContent=rp(due);$("vTerbilang").textContent=terbilang(due);
+  // virtual account block: only when chosen
+  $("vVa").hidden=!S.vaOn;
+  $("vVaBank").textContent=S.vaBank||"–";$("vVaNo").textContent=S.vaNo||"–";$("vVaNama").textContent=S.vaNama||"–";
+  // kwitansi: only when lunas
+  const lunas=S.status==="lunas";
+  $("kwSheet").hidden=!lunas;$("kwOff").hidden=lunas;
+  $("kNo").textContent=(S.noinv||"").replace(/^LT\b/,"KW")||"–";
+  $("kDari").textContent=(S.nama||"–")+(S.instansi?" — "+S.instansi:"");
+  $("kWords").textContent=terbilang(total);
+  $("kUntuk").textContent=`Biaya analisis ${S.jml} sampel ${JENIS[S.jenis].toLowerCase()} (${L.length} jenis analisis, tarif ${S.tarif})`+(S.kode?`, kode ${S.kode}`:"");
+  $("kVaLine").hidden=!S.vaOn;
+  $("kVa").textContent=`Virtual account ${S.vaBank||""} ${S.vaNo||""}`.replace(/\s+/g," ").trim();
+  $("kRef").textContent=(S.noinv||"–")+" · "+fmtTgl(S.tgl);
+  $("kAmt").textContent=rp(total);
+  $("printKw").hidden=!lunas;
+  save();
+}
+
+function syncForm(){
+  ["nama","instansi","jenis","status","dp","kode","jml","tgl","noinv","vaBank","vaNo","vaNama"].forEach(k=>$(k).value=S[k]);
+  $("vaOn").checked=S.vaOn;
+}
+["nama","instansi","kode","tgl","noinv","vaBank","vaNo","vaNama"].forEach(k=>$(k).addEventListener("input",e=>{S[k]=e.target.value;render()}));
+$("vaOn").addEventListener("change",e=>{S.vaOn=e.target.checked;render()});
+$("status").addEventListener("change",e=>{S.status=e.target.value;render()});
+$("dp").addEventListener("input",e=>{S.dp=Math.max(0,parseFloat(e.target.value)||0);render()});
+$("jenis").addEventListener("change",e=>{S.jenis=e.target.value;buildLists();render()});
+$("jml").addEventListener("input",e=>{
+  S.jml=Math.max(1,parseInt(e.target.value)||1);
+  Object.keys(S.sel).forEach(k=>{if(!S.sel[k].own){S.sel[k].q=S.jml;const q=$("q_"+k);if(q)q.value=S.jml}});
+  S.custom.forEach(c=>{if(!c.own){c.q=S.jml;const q=$("cq_"+c.id);if(q)q.value=S.jml}});
+  document.querySelectorAll('#lists input[type=number]:disabled').forEach(q=>q.value=S.jml);
+  render();
+});
+document.querySelectorAll("#tarif button").forEach(b=>b.addEventListener("click",()=>{S.tarif=b.dataset.k;buildLists();render()}));
+$("paket").addEventListener("click",()=>{ITEMS.forEach(i=>{if(i.paket&&!S.sel[i.no])S.sel[i.no]={q:S.jml,own:false}});buildLists();render()});
+$("clear").addEventListener("click",()=>{S.sel={};S.custom=[];buildLists();buildCustom();render()});
+$("addC").addEventListener("click",()=>{S.custom.push({id:Date.now().toString(36),nama:"",harga:0,q:S.jml,own:false});buildCustom();render();const l=S.custom[S.custom.length-1];const el=$("cn_"+l.id);if(el)el.focus()});
+let resetArmed=false;
+$("reset").addEventListener("click",e=>{
+  if(!resetArmed){resetArmed=true;e.target.textContent="Klik lagi untuk mengosongkan";setTimeout(()=>{resetArmed=false;e.target.textContent="Invoice baru"},3000);return}
+  resetArmed=false;e.target.textContent="Invoice baru";S=fresh();syncForm();buildLists();buildCustom();render();$("toast").textContent="Formulir dikosongkan";
+});
+$("copy").addEventListener("click",()=>{
+  const L=lines();const total=L.reduce((a,b)=>a+b.sub,0);
+  const txt=[`INVOICE ${S.noinv} — ${fmtTgl(S.tgl)}`,`Laboratorium Tanah FP Unud`,``,`Nama: ${S.nama}`,`Instansi: ${S.instansi}`,`Jenis sampel: ${JENIS[S.jenis]}`,`Jumlah sampel: ${S.jml}${S.kode?" ("+S.kode+")":""}`,`Tarif: ${TARIF_INFO[S.tarif]}`,`Status: ${$("vStatus").textContent}`,``,
+    ...L.map(l=>`${l.no}. ${l.nama} — ${rp(l.harga)} x ${l.q} = ${rp(l.sub)}`),``,`Total biaya: ${rp(total)}`,`${$("vGrandLbl").textContent}: ${$("vGrand").textContent}`,`Terbilang: ${$("vTerbilang").textContent}`,
+    ...(S.vaOn?[``,`Pembayaran via virtual account`,`Bank: ${S.vaBank}`,`No. VA: ${S.vaNo}`,`Atas nama: ${S.vaNama}`]:[])].join("\n");
+  const fb=$("copyfallback");
+  const show=()=>{fb.hidden=false;fb.value=txt;fb.select();$("toast").textContent="Salin teks di bawah secara manual"};
+  try{navigator.clipboard.writeText(txt).then(()=>{$("toast").textContent="Rincian disalin";fb.hidden=true}).catch(show)}catch(e){show()}
+});
+
+
+function cetak(mode){document.body.setAttribute("data-print",mode);window.print();setTimeout(function(){document.body.removeAttribute("data-print")},500)}
+$("printInv").addEventListener("click",function(){cetak("inv")});
+$("printKw").addEventListener("click",function(){cetak("kw")});
+syncForm();buildLists();buildCustom();render();
+</script>
+
+</body>
+</html>
